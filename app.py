@@ -19,6 +19,46 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# =======================
+# AUTENTICACIÓN DE ADMIN
+# =======================
+def check_admin_password():
+    """Verifica si el usuario ha ingresado la contraseña correcta de admin"""
+    
+    def password_entered():
+        """Callback cuando se ingresa la contraseña"""
+        if (st.session_state["username"] == st.session_state["admin_username"] and
+            st.session_state["password"] == st.session_state["admin_password"]):
+            st.session_state["admin_authenticated"] = True
+            del st.session_state["password"]  # No guardar la contraseña
+        else:
+            st.session_state["admin_authenticated"] = False
+    
+    # Cargar credenciales desde secrets.toml o usar valores por defecto
+    if "admin_username" not in st.session_state:
+        try:
+            st.session_state["admin_username"] = st.secrets["admin"]["username"]
+            st.session_state["admin_password"] = st.secrets["admin"]["password"]
+        except:
+            # Valores por defecto si no hay secrets.toml (CAMBIAR EN PRODUCCIÓN)
+            st.session_state["admin_username"] = "admin"
+            st.session_state["admin_password"] = "cti2025"
+    
+    if "admin_authenticated" not in st.session_state:
+        st.session_state["admin_authenticated"] = False
+    
+    if not st.session_state["admin_authenticated"]:
+        st.markdown("### 🔐 Acceso de Administrador")
+        st.text_input("Usuario", key="username")
+        st.text_input("Contraseña", type="password", key="password", on_change=password_entered)
+        
+        if st.session_state.get("admin_authenticated") == False and "password" in st.session_state:
+            st.error("❌ Usuario o contraseña incorrectos")
+        
+        return False
+    else:
+        return True
+
 # Estilos CSS personalizados
 st.markdown("""
 <style>
@@ -779,40 +819,52 @@ st.markdown(f"""
 # Sidebar
 with st.sidebar:
     st.header("⚙️ Configuración")
-    st.caption("Autoescaneo activo cada 5 minutos")
-    # Cantidad de artículos a ingerir por fuente
-    if 'max_per_source' not in st.session_state:
-        st.session_state.max_per_source = 50
-    st.session_state.max_per_source = st.selectbox(
-        "Cantidad por fuente",
-        options=[10, 25, 50, 100],
-        index=[10, 25, 50, 100].index(st.session_state.max_per_source)
-    )
     
-    # Inicializar estado de actualización incremental
-    if 'feed_update_state' not in st.session_state:
-        st.session_state.feed_update_state = {
-            'running': False,
-            'total_new': 0,
-            'last_source': '',
-            'progress': 0.0
-        }
-    
-    # Botón para actualizar feeds
-    if st.button("🔄 Actualizar Feeds", key="update_feeds"):
-        # Ejecutar actualización sin bloquear
-        sources = db.get_sources()
-        total_new = 0
-        total_articles = len(sources) * int(st.session_state.max_per_source)
-        processed = 0
-        
-        # Contenedor para progreso
-        progress_container = st.empty()
-        status_container = st.empty()
-        
-        for idx, (_, source) in enumerate(sources.iterrows()):
-            entries, error = rss_processor.get_feed_entries(
-                source['url'],
+    # Sección de administración protegida
+    with st.expander("🔐 Administración", expanded=False):
+        if check_admin_password():
+            st.success("✅ Autenticado como administrador")
+            
+            if st.button("🚪 Cerrar Sesión"):
+                st.session_state["admin_authenticated"] = False
+                st.rerun()
+            
+            st.divider()
+            
+            st.caption("Autoescaneo activo cada 5 minutos")
+            # Cantidad de artículos a ingerir por fuente
+            if 'max_per_source' not in st.session_state:
+                st.session_state.max_per_source = 50
+            st.session_state.max_per_source = st.selectbox(
+                "Cantidad por fuente",
+                options=[10, 25, 50, 100],
+                index=[10, 25, 50, 100].index(st.session_state.max_per_source)
+            )
+            
+            # Inicializar estado de actualización incremental
+            if 'feed_update_state' not in st.session_state:
+                st.session_state.feed_update_state = {
+                    'running': False,
+                    'total_new': 0,
+                    'last_source': '',
+                    'progress': 0.0
+                }
+            
+            # Botón para actualizar feeds (solo admin)
+            if st.button("🔄 Actualizar Feeds", key="update_feeds"):
+                # Ejecutar actualización sin bloquear
+                sources = db.get_sources()
+                total_new = 0
+                total_articles = len(sources) * int(st.session_state.max_per_source)
+                processed = 0
+                
+                # Contenedor para progreso
+                progress_container = st.empty()
+                status_container = st.empty()
+                
+                for idx, (_, source) in enumerate(sources.iterrows()):
+                    entries, error = rss_processor.get_feed_entries(
+                        source['url'],
                 max_articles=int(st.session_state.max_per_source)
             )
             
@@ -828,34 +880,22 @@ with st.sidebar:
                 
                 # Procesar artículo
                 added, title = rss_processor.process_single_entry(source['id'], entry)
-                if added:
-                    total_new += 1
-                    status_container.caption(f"✅ Agregado: {title[:50]}... • Total: {total_new}")
+                    if added:
+                        total_new += 1
+                        status_container.caption(f"✅ Agregado: {title[:50]}... • Total: {total_new}")
+                
+                db.update_source_fetch_time(source['id'])
             
-            db.update_source_fetch_time(source['id'])
-        
-        progress_container.empty()
-        status_container.success(f"🎉 Actualización completa: {total_new} artículos nuevos")
-        time.sleep(2)
-        status_container.empty()
-    
-    # Botón para borrar base de datos
-    if st.button("🗑️ Reiniciar DB", key="reset_db", help="Borra artículos actuales para recargar con traducción"):
-        try:
-            import os
-            conn = db.get_connection()
-            conn.close()
-            if os.path.exists("cti_platform.db"):
-                os.remove("cti_platform.db")
-                st.success("✅ Base de datos reiniciada. Presiona 'Actualizar Feeds'")
-                time.sleep(2)
-                st.rerun()
-        except Exception as e:
-            st.error(f"Error: {e}")
+            progress_container.empty()
+            status_container.success(f"🎉 Actualización completa: {total_new} artículos nuevos")
+            time.sleep(2)
+            status_container.empty()
+        else:
+            st.info("🔒 Inicia sesión como administrador para actualizar feeds")
     
     st.divider()
     
-    # Filtros
+    # Filtros (accesibles para todos)
     st.subheader("🔍 Filtros")
     
     # Búsqueda
@@ -1232,43 +1272,59 @@ with tab4:
 with tab2:
     st.header("Fuentes RSS Configuradas")
     
-    # Formatear última actualización en español
-    sources_display = sources_df.copy()
-    if 'last_fetched' in sources_display.columns:
-        sources_display['última_actualización'] = sources_display['last_fetched'].apply(
-            lambda x: pd.to_datetime(x).strftime("%d/%m/%Y %H:%M") if pd.notna(x) else "Nunca"
-        )
-        sources_display = sources_display[['name', 'url', 'type', 'region', 'última_actualización']]
-        sources_display.columns = ['Nombre', 'URL', 'Tipo', 'Región', 'Última Actualización']
-    
-    st.dataframe(sources_display, width="stretch")
-    
-    st.subheader("➕ Agregar Nueva Fuente")
-    with st.form("add_source_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            new_name = st.text_input("Nombre")
-            new_url = st.text_input("URL del RSS")
-        with col2:
-            new_type = st.text_input("Tipo", value="threat_intel")
-            new_region = st.text_input("Región", value="Global")
+    # Proteger gestión de fuentes solo para admin
+    if not st.session_state.get("admin_authenticated", False):
+        st.warning("🔒 La gestión de fuentes RSS está restringida a administradores")
+        st.info("💡 Inicia sesión como administrador en el panel lateral para agregar o modificar fuentes")
         
-        submitted = st.form_submit_button("Agregar Fuente")
-        if submitted and new_name and new_url:
-            try:
-                conn = db.get_connection()
-                cursor = conn.cursor()
-                cursor.execute(
-                    "INSERT INTO sources (name, url, type, region) VALUES (?, ?, ?, ?)",
-                    (new_name, new_url, new_type, new_region)
-                )
-                conn.commit()
-                conn.close()
-                st.success(f"✅ Fuente '{new_name}' agregada correctamente")
-                time.sleep(1)
-                st.rerun()
-            except sqlite3.IntegrityError:
-                st.error("❌ Esta URL ya existe")
+        # Mostrar solo la lista de fuentes (sin botón de agregar)
+        sources_display = sources_df.copy()
+        if 'last_fetched' in sources_display.columns:
+            sources_display['última_actualización'] = sources_display['last_fetched'].apply(
+                lambda x: pd.to_datetime(x).strftime("%d/%m/%Y %H:%M") if pd.notna(x) else "Nunca"
+            )
+            sources_display = sources_display[['name', 'url', 'type', 'region', 'última_actualización']]
+            sources_display.columns = ['Nombre', 'URL', 'Tipo', 'Región', 'Última Actualización']
+        
+        st.dataframe(sources_display, width="stretch")
+    else:
+        # Admin autenticado: mostrar todo
+        sources_display = sources_df.copy()
+        if 'last_fetched' in sources_display.columns:
+            sources_display['última_actualización'] = sources_display['last_fetched'].apply(
+                lambda x: pd.to_datetime(x).strftime("%d/%m/%Y %H:%M") if pd.notna(x) else "Nunca"
+            )
+            sources_display = sources_display[['name', 'url', 'type', 'region', 'última_actualización']]
+            sources_display.columns = ['Nombre', 'URL', 'Tipo', 'Región', 'Última Actualización']
+        
+        st.dataframe(sources_display, width="stretch")
+        
+        st.subheader("➕ Agregar Nueva Fuente")
+        with st.form("add_source_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                new_name = st.text_input("Nombre")
+                new_url = st.text_input("URL del RSS")
+            with col2:
+                new_type = st.text_input("Tipo", value="threat_intel")
+                new_region = st.text_input("Región", value="Global")
+            
+            submitted = st.form_submit_button("Agregar Fuente")
+            if submitted and new_name and new_url:
+                try:
+                    conn = db.get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "INSERT INTO sources (name, url, type, region) VALUES (?, ?, ?, ?)",
+                        (new_name, new_url, new_type, new_region)
+                    )
+                    conn.commit()
+                    conn.close()
+                    st.success(f"✅ Fuente '{new_name}' agregada correctamente")
+                    time.sleep(1)
+                    st.rerun()
+                except sqlite3.IntegrityError:
+                    st.error("❌ Esta URL ya existe")
 
 with tab3:
     st.header("ℹ️ Ayuda e Información")
