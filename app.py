@@ -880,16 +880,16 @@ with st.sidebar:
                 
                 # Procesar artículo
                 added, title = rss_processor.process_single_entry(source['id'], entry)
-                    if added:
-                        total_new += 1
-                        status_container.caption(f"✅ Agregado: {title[:50]}... • Total: {total_new}")
-                
-                db.update_source_fetch_time(source['id'])
+                if added:
+                    total_new += 1
+                    status_container.caption(f"✅ Agregado: {title[:50]}... • Total: {total_new}")
             
-            progress_container.empty()
-            status_container.success(f"🎉 Actualización completa: {total_new} artículos nuevos")
-            time.sleep(2)
-            status_container.empty()
+            db.update_source_fetch_time(source['id'])
+        
+        progress_container.empty()
+        status_container.success(f"🎉 Actualización completa: {total_new} artículos nuevos")
+        time.sleep(2)
+        status_container.empty()
         else:
             st.info("🔒 Inicia sesión como administrador para actualizar feeds")
     
