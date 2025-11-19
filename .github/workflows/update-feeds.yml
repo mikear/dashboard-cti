@@ -1,0 +1,38 @@
+name: Auto Update RSS Feeds
+
+on:
+  schedule:
+    # Ejecutar cada 6 horas (ajusta según necesites)
+    - cron: '0 */6 * * *'
+  workflow_dispatch:  # Permite ejecución manual desde GitHub
+
+jobs:
+  update-feeds:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install feedparser beautifulsoup4 deep-translator requests
+      
+      - name: Run feed update
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
+          python api_endpoint.py $API_TOKEN
+      
+      - name: Commit updated database
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add cti_platform.db
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update: RSS feeds $(date +'%Y-%m-%d %H:%M')"
+          git push

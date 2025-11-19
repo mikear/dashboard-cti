@@ -31,12 +31,12 @@ Thumbs.db
 logs/
 *.log
 
-# Database
-*.db
-*.db-journal
-*.db-wal
-*.db-shm
-*.sqlite
+# Database (excepto cuando se actualiza automáticamente)
+# *.db
+# *.db-journal
+# *.db-wal
+# *.db-shm
+# *.sqlite
 
 # Python
 __pycache__/
