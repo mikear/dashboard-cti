@@ -1002,21 +1002,14 @@ with tab1:
         
         # Mostrar artículos
         for idx, article in articles_df.iterrows():
-            # Formatear fecha en español
+            # Formatear fecha
             try:
                 fecha = pd.to_datetime(article['published'])
-                fecha_es = fecha.strftime("%d de %B de %Y a las %H:%M")
-                # Traducir meses al español
-                meses = {
-                    'January': 'enero', 'February': 'febrero', 'March': 'marzo',
-                    'April': 'abril', 'May': 'mayo', 'June': 'junio',
-                    'July': 'julio', 'August': 'agosto', 'September': 'septiembre',
-                    'October': 'octubre', 'November': 'noviembre', 'December': 'diciembre'
-                }
-                for eng, esp in meses.items():
-                    fecha_es = fecha_es.replace(eng, esp)
+                fecha_corta = fecha.strftime("%d/%m/%Y")
+                hora = fecha.strftime("%H:%M")
             except:
-                fecha_es = str(article['published'])
+                fecha_corta = "Sin fecha"
+                hora = ""
             
             # Clasificar amenaza
             threat_info = threat_classifier.classify_threat(
@@ -1026,10 +1019,21 @@ with tab1:
             severity = threat_info['severity']
             threat_type = threat_info['type']
             
-            # Mostrar título con etiqueta en la misma línea
-            col_title, col_badge = st.columns([4, 1])
+            # Diseño mejorado: fecha + fuente a la izquierda, título al centro, badge a la derecha
+            col_meta, col_title, col_badge = st.columns([2, 5, 1.5])
+            
+            with col_meta:
+                st.markdown(f"""
+                <div style="font-size: 0.85em; color: #666; line-height: 1.4;">
+                    <div style="font-weight: 600; color: #333;">{fecha_corta}</div>
+                    <div>{hora}</div>
+                    <div style="color: #1f77b4; font-weight: 500; margin-top: 4px;">{article['source_name']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
             with col_title:
                 st.markdown(f"**{article['title']}**")
+            
             with col_badge:
                 st.markdown(
                     f'<div style="text-align: right;"><span class="threat-{severity}">{threat_type}</span></div>',
@@ -1037,30 +1041,52 @@ with tab1:
                 )
             
             with st.expander("📄 Ver detalles", expanded=False):
+                # Formatear fecha completa para detalles
+                try:
+                    fecha = pd.to_datetime(article['published'])
+                    fecha_completa = fecha.strftime("%d de %B de %Y a las %H:%M")
+                    # Traducir meses al español
+                    meses = {
+                        'January': 'enero', 'February': 'febrero', 'March': 'marzo',
+                        'April': 'abril', 'May': 'mayo', 'June': 'junio',
+                        'July': 'julio', 'August': 'agosto', 'September': 'septiembre',
+                        'October': 'octubre', 'November': 'noviembre', 'December': 'diciembre'
+                    }
+                    for eng, esp in meses.items():
+                        fecha_completa = fecha_completa.replace(eng, esp)
+                except:
+                    fecha_completa = "Fecha no disponible"
+                
+                st.markdown(f"**📅 Publicado:** {fecha_completa}")
+                st.divider()
                 
                 col1, col2 = st.columns([3, 1])
                 
                 with col1:
-                    st.markdown(f"**Fuente:** {article['source_name']}")
-                    st.markdown(f"**Publicado:** {fecha_es}")
-                    
                     if article['summary']:
+                        st.markdown("**📝 Resumen:**")
                         st.markdown(article['summary'])
                     
                     if article['iocs']:
                         st.markdown("**🔴 IOCs detectados:**")
                         iocs = article['iocs'].split(',')
-                        for ioc in iocs[:10]:
-                            st.markdown(f"`{ioc}`")
+                        ioc_display = " • ".join([f"`{ioc}`" for ioc in iocs[:10]])
+                        st.markdown(ioc_display)
+                        if len(iocs) > 10:
+                            st.caption(f"+ {len(iocs) - 10} IOCs más")
                     
                     if article['url']:
                         st.markdown(f"[🔗 Ver artículo original]({article['url']})")
                 
                 with col2:
                     if article['tags']:
+                        st.markdown("**🏷️ Tags:**")
                         tags = article['tags'].split(',')
                         for tag in tags:
-                            st.markdown(f"🏷️ {tag}")
+                            st.markdown(f"• {tag}")
+            
+            # Separador sutil entre artículos
+            st.markdown("<hr style='margin: 15px 0; border: none; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
         
         # Paginación inferior
         st.divider()
