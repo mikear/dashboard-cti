@@ -811,7 +811,7 @@ st.markdown(f"""
     <p>Cyber Threat Intelligence · Inteligencia de Amenazas en Tiempo Real</p>
     <div class="status-bar">
         <span class="status-led green"></span>
-        <span>En línea — autoescaneo activo cada 5 minutos</span>
+        <span>En línea — autoescaneo activo cada hora</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -831,7 +831,7 @@ with st.sidebar:
             
             st.divider()
             
-            st.caption("Autoescaneo activo cada 5 minutos")
+            st.caption("Autoescaneo activo cada hora")
             # Cantidad de artículos a ingerir por fuente
             if 'max_per_source' not in st.session_state:
                 st.session_state.max_per_source = 50
