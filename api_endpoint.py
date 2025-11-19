@@ -152,7 +152,7 @@ class RSSUpdater:
         cursor = conn.cursor()
         
         # Obtener fuentes
-        cursor.execute("SELECT id, name, url FROM sources WHERE active = 1")
+        cursor.execute("SELECT id, name, url FROM sources")
         sources = cursor.fetchall()
         conn.close()
         
