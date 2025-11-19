@@ -1,9 +1,224 @@
-# CTI Platform - Cyber Threat Intelligence Feed
+# CTI Platform - Cyber Threat Intelligence Dashboard
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/yourrepo/cti-platform)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-**CTI Platform** is a comprehensive Cyber Threat Intelligence system that aggregates, translates, enriches, and presents security news from multiple RSS feeds in real-time.
+**CTI Platform** es un sistema de Inteligencia de Amenazas Cibernéticas que agrega, traduce, enriquece y presenta noticias de seguridad desde múltiples fuentes RSS en tiempo real.
+
+## 🌟 Características
+
+- **Búsqueda Full-Text** con SQLite FTS5 y soporte para español
+- **Paginación Inteligente** con configuración flexible de resultados
+- **Traducción Automática** a español con preservación de IOCs
+- **Extracción de IOCs** (IPs, dominios, CVEs, hashes, emails)
+- **Dashboard de Estadísticas** con visualizaciones profesionales
+- **Filtrado de Contenido** para excluir eventos/webinars no relevantes
+- **Actualización Incremental** con barras de progreso en tiempo real
+- **Interfaz Responsive** construida con Streamlit
+
+## 🚀 Despliegue en Streamlit Cloud (GRATIS)
+
+### Opción 1: Streamlit Cloud (Recomendado - Más Fácil)
+
+1. **Sube tu código a GitHub:**
+
+   ```bash
+   cd "c:\Users\diego\OneDrive\Documentos\app\Dashboard"
+   git init
+   git add .
+   git commit -m "Initial commit - CTI Platform"
+   git branch -M main
+   git remote add origin https://github.com/TU-USUARIO/cti-platform.git
+   git push -u origin main
+   ```
+
+2. **Despliega en Streamlit Cloud:**
+
+   - Ve a [share.streamlit.io](https://share.streamlit.io)
+   - Inicia sesión con GitHub
+   - Click en "New app"
+   - Selecciona tu repositorio `cti-platform`
+   - Main file: `app.py`
+   - Click "Deploy"
+
+3. **¡Listo!** Tu app estará en: `https://TU-USUARIO-cti-platform.streamlit.app`
+
+### Opción 2: Railway.app
+
+1. **Instala Railway CLI:**
+
+   ```bash
+   npm install -g @railway/cli
+   ```
+
+2. **Despliega:**
+
+   ```bash
+   railway login
+   railway init
+   railway up
+   ```
+
+3. **Configura dominio público** en el dashboard de Railway
+
+### Opción 3: Render.com
+
+1. Crea cuenta en [render.com](https://render.com)
+2. "New" → "Web Service"
+3. Conecta tu repositorio GitHub
+4. Build Command: `pip install -r requirements.txt`
+5. Start Command: `streamlit run app.py --server.port=$PORT --server.address=0.0.0.0`
+6. Click "Create Web Service"
+
+## 💻 Instalación Local
+
+### Prerrequisitos
+
+- Python 3.11+
+- pip
+
+### Pasos
+
+1. **Clona el repositorio:**
+
+   ```bash
+   git clone https://github.com/TU-USUARIO/cti-platform.git
+   cd cti-platform
+   ```
+
+2. **Instala dependencias:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Ejecuta la aplicación:**
+
+   ```bash
+   streamlit run app.py
+   ```
+
+4. **Accede a:** http://localhost:8501
+
+## 📚 Uso
+
+### Feed de Noticias
+
+- **Búsqueda:** Usa el campo de búsqueda para encontrar artículos por palabras clave
+- **Filtros:** Selecciona días (1/7/30/Todos) y fuente específica
+- **Paginación:** Configura resultados por página (25/50/100)
+- **Navegación:** Usa los controles de página superior e inferior
+
+### Dashboard de Estadísticas
+
+- **Período de Tendencias:** Selecciona 7/30/90 días o todo el historial
+- **KPIs:** Visualiza artículos totales, últimos 7 días, y con IOCs
+- **Gráficos:** Distribución por criticidad, tipos de amenazas, IOCs, y fuentes
+
+### Actualizar Feeds
+
+- Click en "🔄 Actualizar Feeds" en el sidebar
+- **Configuración:** Ajusta cantidad máxima por fuente (10/25/50/100)
+- **Progreso:** Observa barra de progreso y estado en tiempo real
+- **Filtrado:** El sistema excluye automáticamente eventos/webinars
+
+## 🔍 Características Técnicas
+
+### Búsqueda Full-Text (FTS5)
+
+- Tokenizador Unicode61 con soporte para español
+- Búsqueda por prefijos automática (`término*`)
+- Ranking BM25 para relevancia
+- Fallback a LIKE si FTS no está disponible
+
+### Filtrado Inteligente de Contenido
+
+**Palabras excluidas:**
+- virtual event, webinar, register, conference, summit, outlook, predictions, RSVP
+
+**Palabras requeridas (seguridad):**
+- vulnerability, exploit, breach, malware, ransomware, CVE, zero-day, patch, trojan, APT, phishing, backdoor
+
+### Validación de Fechas
+
+- Rechaza artículos con fechas futuras (margen de 1 día)
+- Evita anomalías en gráficos de tendencias
+
+## 📦 Estructura del Proyecto
+
+```
+Dashboard/
+├── app.py                 # Aplicación principal Streamlit
+├── requirements.txt       # Dependencias Python
+├── .streamlit/
+│   └── config.toml       # Configuración de Streamlit
+├── .gitignore            # Archivos excluidos de Git
+└── README.md             # Este archivo
+```
+
+## 🔐 Seguridad
+
+- **Sanitización HTML:** Todo el contenido se limpia con BeautifulSoup
+- **Validación de Fechas:** Previene inyección de datos futuros
+- **Preservación de IOCs:** Los indicadores técnicos nunca se modifican en traducción
+- **Base de Datos Local:** SQLite con fingerprints SHA256 para prevenir duplicados
+
+## ⚙️ Configuración
+
+### Agregar Nuevas Fuentes RSS
+
+Edita la tabla `sources` en la base de datos SQLite:
+
+```python
+# En app.py, dentro de init_database():
+cursor.execute("""
+    INSERT INTO sources (name, url, type, region, country, language)
+    VALUES (?, ?, ?, ?, ?, ?)
+""", ('Nueva Fuente', 'https://example.com/feed.xml', 'threat_intel', 'Americas', 'Mexico', 'es'))
+```
+
+### Fuentes Actuales
+
+1. **Krebs on Security** - Investigación de ciberseguridad
+2. **The Hacker News** - Noticias de seguridad informática
+3. **Schneier on Security** - Blog de experto en criptografía
+4. **Threatpost** - Inteligencia de amenazas
+5. **Dark Reading** - Noticias empresariales de seguridad
+
+## 🐛 Solución de Problemas
+
+### La base de datos está vacía
+
+Ejecuta "🔄 Actualizar Feeds" en el sidebar para poblar artículos.
+
+### Error en traducción
+
+Verifica conexión a internet. El sistema usa Google Translate gratuito.
+
+### Búsqueda no funciona
+
+Asegúrate de que la tabla FTS5 está inicializada. Reinicia la app.
+
+### Gráfico de tendencias muestra fechas futuras
+
+La última actualización agregó validación. Actualiza feeds nuevamente para filtrar artículos con fechas incorrectas.
+
+## 📄 Licencia
+
+Este proyecto está licenciado bajo la Licencia MIT.
+
+## 🙏 Agradecimientos
+
+- Krebs on Security
+- The Hacker News
+- Schneier on Security
+- Threatpost
+- Dark Reading
+
+---
+
+**Construido con ❤️ para la comunidad de ciberseguridad**
 
 ## 🌟 Features
 

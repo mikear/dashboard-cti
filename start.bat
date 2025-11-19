@@ -1,49 +1,29 @@
 @echo off
+cls
 echo ====================================
-echo CTI Platform - Inicio Rapido
+echo CTI Platform - Streamlit
 echo ====================================
 echo.
-echo Iniciando servicios con Docker Compose...
-echo.
 
-docker-compose up -d
-
+REM Verificar Python
+python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Error al iniciar Docker Compose
+    echo ERROR: Python no esta instalado
     echo.
-    echo Asegurate de que Docker Desktop este ejecutandose
+    echo Descarga Python desde: https://www.python.org/downloads/
+    echo Asegurate de marcar "Add Python to PATH"
+    echo.
     pause
     exit /b 1
 )
 
+echo Iniciando aplicacion...
 echo.
-echo ====================================
-echo Servicios iniciados correctamente!
-echo ====================================
+echo Accede en: http://localhost:8501
 echo.
-echo Esperando a que los servicios esten listos...
-timeout /t 10 /nobreak > nul
 
-echo.
-echo Estado de los servicios:
-docker-compose ps
+REM Abrir navegador automaticamente
+start http://localhost:8501
 
-echo.
-echo ====================================
-echo Plataforma CTI Lista!
-echo ====================================
-echo.
-echo Accede a la plataforma en:
-echo   Frontend: http://localhost:3000
-echo   Backend:  http://localhost:3001
-echo   API Docs: http://localhost:3001/api/docs
-echo.
-echo Los articulos comenzaran a aparecer en 5-10 minutos
-echo.
-echo Para ver logs:
-echo   docker-compose logs -f
-echo.
-echo Para detener:
-echo   docker-compose down
-echo.
-pause
+REM Ejecutar Streamlit
+python -m streamlit run app.py

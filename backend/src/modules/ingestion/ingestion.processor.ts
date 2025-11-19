@@ -1,6 +1,4 @@
-import { Process, Processor } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import { Logger, Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
@@ -19,7 +17,7 @@ interface IngestionJob {
     sourceId: string;
 }
 
-@Processor('ingestion')
+@Injectable()
 export class IngestionProcessor {
     private readonly logger = new Logger(IngestionProcessor.name);
 
@@ -39,9 +37,8 @@ export class IngestionProcessor {
         private articlesGateway: ArticlesGateway,
     ) { }
 
-    @Process('fetch-rss')
-    async handleFetchRss(job: Job<IngestionJob>) {
-        const { sourceId } = job.data;
+    async handleFetchRss(job: { data: IngestionJob } | IngestionJob) {
+        const sourceId = 'data' in job ? job.data.sourceId : job.sourceId;
         this.logger.log(`Processing RSS feed for source: ${sourceId}`);
 
         try {
@@ -171,7 +168,7 @@ export class IngestionProcessor {
             const iocEntities = extractedIocs.map(ioc =>
                 this.iocRepository.create({
                     articleId: savedArticle.id,
-                    type: ioc.type,
+                    type: ioc.type as any, // Cast to any to avoid strict enum check issues with string values
                     value: ioc.value,
                     normalizedValue: ioc.normalizedValue,
                     context: ioc.context,

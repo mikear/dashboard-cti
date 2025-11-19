@@ -1,15 +1,17 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional, Inject } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { SourcesService } from '../sources/sources.service';
+import { IngestionProcessor } from './ingestion.processor';
 
 @Injectable()
 export class IngestionSchedulerService implements OnModuleInit {
     private readonly logger = new Logger(IngestionSchedulerService.name);
 
     constructor(
-        @InjectQueue('ingestion') private ingestionQueue: Queue,
+        @Optional() @InjectQueue('ingestion') private ingestionQueue: Queue,
         private sourcesService: SourcesService,
+        private ingestionProcessor: IngestionProcessor,
     ) { }
 
     async onModuleInit() {
@@ -38,18 +40,26 @@ export class IngestionSchedulerService implements OnModuleInit {
                     }
                 }
 
-                // Add job to queue
-                await this.ingestionQueue.add('fetch-rss', {
-                    sourceId: source.id,
-                }, {
-                    attempts: 3,
-                    backoff: {
-                        type: 'exponential',
-                        delay: 5000,
-                    },
-                    removeOnComplete: true,
-                    removeOnFail: false,
-                });
+                if (this.ingestionQueue) {
+                    // Add job to queue
+                    await this.ingestionQueue.add('fetch-rss', {
+                        sourceId: source.id,
+                    }, {
+                        attempts: 3,
+                        backoff: {
+                            type: 'exponential',
+                            delay: 5000,
+                        },
+                        removeOnComplete: true,
+                        removeOnFail: false,
+                    });
+                } else {
+                    // Direct call (NO_DOCKER mode)
+                    this.logger.log(`Directly processing source (NO_DOCKER): ${source.name}`);
+                    // We don't await this to avoid blocking the loop, similar to queue behavior
+                    this.ingestionProcessor.handleFetchRss({ data: { sourceId: source.id } } as any)
+                        .catch(err => this.logger.error(`Error in direct processing: ${err.message}`));
+                }
 
                 this.logger.log(`Scheduled RSS fetch for: ${source.name}`);
             }
@@ -59,7 +69,11 @@ export class IngestionSchedulerService implements OnModuleInit {
     }
 
     async triggerSource(sourceId: string): Promise<void> {
-        await this.ingestionQueue.add('fetch-rss', { sourceId });
+        if (this.ingestionQueue) {
+            await this.ingestionQueue.add('fetch-rss', { sourceId });
+        } else {
+            this.ingestionProcessor.handleFetchRss({ data: { sourceId } } as any);
+        }
         this.logger.log(`Manually triggered source: ${sourceId}`);
     }
 }

@@ -14,11 +14,15 @@ import { SourcesModule } from '../sources/sources.module';
 import { SearchModule } from '../search/search.module';
 import { ArticlesModule } from '../articles/articles.module';
 
+const isNoDocker = process.env.NO_DOCKER === 'true';
+
 @Module({
     imports: [
-        BullModule.registerQueue({
-            name: 'ingestion',
-        }),
+        ...(isNoDocker ? [] : [
+            BullModule.registerQueue({
+                name: 'ingestion',
+            }),
+        ]),
         TypeOrmModule.forFeature([ArticleEntity, IocEntity, SourceEntity]),
         SourcesModule,
         SearchModule,

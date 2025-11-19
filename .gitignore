@@ -33,7 +33,24 @@ logs/
 
 # Database
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
 *.sqlite
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+
+# Streamlit
+.streamlit/secrets.toml
 
 # Docker
 docker-compose.override.yml

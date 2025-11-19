@@ -35,7 +35,7 @@ export class SourceEntity {
     @Column({ name: 'fetch_interval_minutes', type: 'integer', default: 30 })
     fetchIntervalMinutes: number;
 
-    @Column({ name: 'last_fetched_at', type: 'timestamp', nullable: true })
+    @Column({ name: 'last_fetched_at', nullable: true })
     lastFetchedAt: Date;
 
     @CreateDateColumn({ name: 'created_at' })

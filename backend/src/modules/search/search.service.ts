@@ -15,6 +15,8 @@ export interface ArticleDocument {
     has_iocs: boolean;
 }
 
+const isNoDocker = process.env.NO_DOCKER === 'true';
+
 @Injectable()
 export class SearchService implements OnModuleInit {
     private client: Client;
@@ -22,13 +24,17 @@ export class SearchService implements OnModuleInit {
     private readonly logger = new Logger(SearchService.name);
 
     constructor() {
-        this.client = new Client({
-            node: process.env.OPENSEARCH_NODE || 'http://localhost:9200',
-        });
+        if (!isNoDocker) {
+            this.client = new Client({
+                node: process.env.OPENSEARCH_NODE || 'http://localhost:9200',
+            });
+        }
     }
 
     async onModuleInit() {
-        await this.ensureIndex();
+        if (!isNoDocker) {
+            await this.ensureIndex();
+        }
     }
 
     private async ensureIndex() {
@@ -64,6 +70,7 @@ export class SearchService implements OnModuleInit {
     }
 
     async indexArticle(document: ArticleDocument): Promise<void> {
+        if (isNoDocker) return;
         try {
             await this.client.index({
                 index: this.indexName,
@@ -87,6 +94,10 @@ export class SearchService implements OnModuleInit {
             hasIocs?: boolean;
         } = {},
     ): Promise<{ hits: any[]; total: number }> {
+        if (isNoDocker) {
+            this.logger.warn('Search is disabled in NO_DOCKER mode');
+            return { hits: [], total: 0 };
+        }
         try {
             const must: any[] = [];
             const filter: any[] = [];
@@ -150,6 +161,7 @@ export class SearchService implements OnModuleInit {
     }
 
     async getAggregations(): Promise<any> {
+        if (isNoDocker) return {};
         try {
             const response = await this.client.search({
                 index: this.indexName,
