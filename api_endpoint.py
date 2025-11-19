@@ -147,11 +147,11 @@ class RSSUpdater:
             return False, str(e)
     
     def update_all_feeds(self, max_per_source: int = 50) -> dict:
-        """Actualiza todos los feeds RSS"""
+        """Actualiza todos los feeds RSS configurados"""
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        # Obtener fuentes
+        # Obtener todas las fuentes configuradas
         cursor.execute("SELECT id, name, url FROM sources")
         sources = cursor.fetchall()
         conn.close()
