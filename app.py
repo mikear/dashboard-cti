@@ -865,31 +865,31 @@ with st.sidebar:
                 for idx, (_, source) in enumerate(sources.iterrows()):
                     entries, error = rss_processor.get_feed_entries(
                         source['url'],
-                max_articles=int(st.session_state.max_per_source)
-            )
-            
-            if error:
-                status_container.error(f"❌ Error en {source['name']}: {error}")
-                continue
-            
-            for entry_idx, entry in enumerate(entries):
-                # Actualizar progreso
-                processed += 1
-                progress_container.progress(processed / total_articles)
-                status_container.caption(f"📝 {source['name']}: {entry_idx+1}/{len(entries)} • ✨ {total_new} nuevos")
+                        max_articles=int(st.session_state.max_per_source)
+                    )
+                    
+                    if error:
+                        status_container.error(f"❌ Error en {source['name']}: {error}")
+                        continue
+                    
+                    for entry_idx, entry in enumerate(entries):
+                        # Actualizar progreso
+                        processed += 1
+                        progress_container.progress(processed / total_articles)
+                        status_container.caption(f"📝 {source['name']}: {entry_idx+1}/{len(entries)} • ✨ {total_new} nuevos")
+                        
+                        # Procesar artículo
+                        added, title = rss_processor.process_single_entry(source['id'], entry)
+                        if added:
+                            total_new += 1
+                            status_container.caption(f"✅ Agregado: {title[:50]}... • Total: {total_new}")
+                    
+                    db.update_source_fetch_time(source['id'])
                 
-                # Procesar artículo
-                added, title = rss_processor.process_single_entry(source['id'], entry)
-                if added:
-                    total_new += 1
-                    status_container.caption(f"✅ Agregado: {title[:50]}... • Total: {total_new}")
-            
-            db.update_source_fetch_time(source['id'])
-        
-        progress_container.empty()
-        status_container.success(f"🎉 Actualización completa: {total_new} artículos nuevos")
-        time.sleep(2)
-        status_container.empty()
+                progress_container.empty()
+                status_container.success(f"🎉 Actualización completa: {total_new} artículos nuevos")
+                time.sleep(2)
+                status_container.empty()
         else:
             st.info("🔒 Inicia sesión como administrador para actualizar feeds")
     
