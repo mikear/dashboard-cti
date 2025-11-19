@@ -164,11 +164,29 @@ class CTIDatabase:
         cursor.execute("SELECT COUNT(*) FROM sources")
         if cursor.fetchone()[0] == 0:
             default_sources = [
+                # Fuentes originales
                 ("Krebs on Security", "https://krebsonsecurity.com/feed/", "threat_intel", "Americas"),
                 ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews", "threat_intel", "Global"),
                 ("Schneier on Security", "https://www.schneier.com/blog/atom.xml", "threat_intel", "Americas"),
                 ("Threatpost", "https://threatpost.com/feed/", "threat_intel", "Americas"),
                 ("Dark Reading", "https://www.darkreading.com/rss.xml", "threat_intel", "Americas"),
+                
+                # Nuevas fuentes de alta reputación
+                ("CISA Cybersecurity Alerts", "https://www.cisa.gov/cybersecurity-advisories/all.xml", "threat_intel", "Americas"),
+                ("US-CERT Alerts", "https://www.cisa.gov/uscert/ncas/alerts.xml", "threat_intel", "Americas"),
+                ("Bleeping Computer", "https://www.bleepingcomputer.com/feed/", "threat_intel", "Global"),
+                ("SecurityWeek", "https://www.securityweek.com/feed/", "threat_intel", "Global"),
+                ("Cyber Scoop", "https://cyberscoop.com/feed/", "threat_intel", "Americas"),
+                ("The Record by Recorded Future", "https://therecord.media/feed", "threat_intel", "Global"),
+                ("Ars Technica Security", "https://feeds.arstechnica.com/arstechnica/security", "threat_intel", "Americas"),
+                ("Graham Cluley", "https://grahamcluley.com/feed/", "threat_intel", "Europe"),
+                ("Kaspersky Securelist", "https://securelist.com/feed/", "threat_intel", "Global"),
+                ("Malwarebytes Labs", "https://blog.malwarebytes.com/feed/", "threat_intel", "Global"),
+                ("Talos Intelligence", "https://blog.talosintelligence.com/rss/", "threat_intel", "Americas"),
+                ("Sophos News", "https://news.sophos.com/en-us/feed/", "threat_intel", "Global"),
+                ("Palo Alto Networks Unit 42", "https://unit42.paloaltonetworks.com/feed/", "threat_intel", "Americas"),
+                ("Microsoft Security Blog", "https://www.microsoft.com/en-us/security/blog/feed/", "threat_intel", "Global"),
+                ("Google Security Blog", "https://security.googleblog.com/feeds/posts/default", "threat_intel", "Global"),
             ]
             cursor.executemany(
                 "INSERT INTO sources (name, url, type, region) VALUES (?, ?, ?, ?)",
