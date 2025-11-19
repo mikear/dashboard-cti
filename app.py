@@ -1358,17 +1358,6 @@ with tab3:
     - **Threatpost**: Amenazas y vulnerabilidades
     - **Dark Reading**: Noticias empresariales de seguridad
     
-    ### 💾 Base de Datos
-    
-    Todos los datos se almacenan localmente en `cti_platform.db` (SQLite).
-    
-    ### ⚙️ Características
-    
-    - ✅ 100% local, sin conexiones externas necesarias
-    - ✅ Base de datos SQLite integrada
-    - ✅ Extracción automática de IOCs
-    - ✅ Búsqueda y filtrado avanzado
-    - ✅ Interfaz simple e intuitiva
     """)
 
 # Footer
