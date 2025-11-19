@@ -2,8 +2,8 @@ name: Auto Update RSS Feeds
 
 on:
   schedule:
-    # Ejecutar cada 6 horas (ajusta según necesites)
-    - cron: '0 */6 * * *'
+    # Ejecutar cada 5 minutos
+    - cron: '*/5 * * * *'
   workflow_dispatch:  # Permite ejecución manual desde GitHub
 
 jobs:
